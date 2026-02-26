@@ -189,16 +189,16 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			}
 
 			NyaHookLib::Patch(0x68501B + 1, &SimplifySortHooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x41C080, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x41C080, &VectorSizeHooked<8>);
 			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4C01D0, &Size8Hooked);
 			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EA9B0, &Size14Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAB00, &Size8Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAD20, &Size8Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x674060, &Size18Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6749E0, &Size8Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF850, &Size8Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF960, &Size8Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EFA70, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAB00, &VectorSizeHooked<8>);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAD20, &VectorSizeHooked<8>);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x674060, &VectorSizeHooked<0x18>);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6749E0, &VectorSizeHooked<8>);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF850, &VectorSizeHooked<8>);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF960, &VectorSizeHooked<8>);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EFA70, &VectorSizeHooked<8>);
 
 			if (std::filesystem::exists("NFSMWOpenLimitAdjuster_gcp.toml")) {
 				try {
@@ -215,6 +215,21 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 
 				for (int i = 0; i < sizeof(aSlotPoolNames)/sizeof(aSlotPoolNames[0]); i++) {
 					aSlotPoolSizes[i] = config["slot_pools"][aSlotPoolNames[i]].value_or(0);
+					if (aSlotPoolSizes[i] && !strcmp(aSlotPoolNames[i], "eMeshRender")) {
+						// extra eMeshRender array
+						auto data = new uint8_t[aSlotPoolSizes[i] * 0x44];
+						NyaHookLib::Patch(0x6DFB8F, &data[0]);
+						NyaHookLib::Patch(0x6DFEDF, &data[0]);
+						NyaHookLib::Patch(0x6E024B, &data[0]);
+						NyaHookLib::Patch(0x6E07B3, &data[0]);
+						NyaHookLib::Patch(0x6E0AEC, &data[0]);
+						NyaHookLib::Patch(0x6DFB71 + 2, aSlotPoolSizes[i]);
+						NyaHookLib::Patch(0x6DFEC1 + 2, aSlotPoolSizes[i]);
+						NyaHookLib::Patch(0x6E0799 + 2, aSlotPoolSizes[i]);
+						NyaHookLib::Patch(0x6E0AD2 + 2, aSlotPoolSizes[i]);
+
+						NyaHookLib::Patch(0x6E42F5 + 1, aSlotPoolSizes[i]); // sorted version
+					}
 				}
 
 				auto ReplacementTextureTableFixupSize = config["replacement_texture_table"].value_or(182);
@@ -466,6 +481,8 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			for (auto& addr : slotpools) {
 				NyaHookLib::PatchRelative(NyaHookLib::CALL, addr, &bNewSlotPoolHooked);
 			}
+
+			WriteLog("Mod initialized");
 		} break;
 		default:
 			break;
