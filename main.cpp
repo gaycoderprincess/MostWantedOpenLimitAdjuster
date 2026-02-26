@@ -21,8 +21,10 @@ void __thiscall NewVector_Destruct(UTL::Vector<void*>* pThis, int a2) {
 	GAME_free(pThis->mBegin);
 }
 
+template<size_t count>
 void* __thiscall NewVector_AllocVectorSpace(UTL::Vector<void*>* pThis, size_t num, size_t alignment) {
-	return GAME_malloc(num * sizeof(void*));
+	WriteLog(std::format("AllocVectorSpace {:X}", (uintptr_t)__builtin_return_address(0)));
+	return GAME_malloc(num * count);
 }
 
 void __thiscall NewVector_FreeVectorSpace(UTL::Vector<void*>* pThis, void* buffer, size_t num) {
@@ -43,7 +45,25 @@ void __thiscall NewVector_OnGrowRequest(UTL::Vector<void*>* pThis, size_t newSiz
 
 void* aNewVectorVTable[] = {
 	(void*)&NewVector_Destruct,
-	(void*)&NewVector_AllocVectorSpace,
+	(void*)&NewVector_AllocVectorSpace<4>,
+	(void*)&NewVector_FreeVectorSpace,
+	(void*)&NewVector_GetGrowSize,
+	(void*)&NewVector_GetMaxCapacity,
+	(void*)&NewVector_OnGrowRequest,
+};
+
+void* aNewGarbageVectorVTable[] = {
+	(void*)&NewVector_Destruct,
+	(void*)&NewVector_AllocVectorSpace<8>,
+	(void*)&NewVector_FreeVectorSpace,
+	(void*)&NewVector_GetGrowSize,
+	(void*)&NewVector_GetMaxCapacity,
+	(void*)&NewVector_OnGrowRequest,
+};
+
+void* aNewVehicleManagementNodeVectorVTable[] = {
+	(void*)&NewVector_Destruct,
+	(void*)&NewVector_AllocVectorSpace<0x18>,
 	(void*)&NewVector_FreeVectorSpace,
 	(void*)&NewVector_GetGrowSize,
 	(void*)&NewVector_GetMaxCapacity,
@@ -137,6 +157,26 @@ bool CanSpawnSimpleRigidBodyNew() {
 	return count < nMaxSimpleRigidBodies;
 }
 
+auto SimplifySort_orig = (bool(*)(uintptr_t, uintptr_t))0x6709E0;
+bool SimplifySortHooked(uintptr_t a1, uintptr_t a2) {
+	if (a1 == 0x1 || a2 == 0x1) {
+		MessageBoxA(0, std::format("Smackable check invalid at {:X} {:X}", a1, a2).c_str(), "nya?!~", MB_ICONERROR);
+
+		auto table = &SMACKABLE_LIST::_mTable;
+		for (int i = 0; i < table->size(); i++) {
+			auto smackable = (uintptr_t)table->get(i);
+			if (smackable == 0x1) {
+				MessageBoxA(0, std::format("Smackable at id {} is invalid", i).c_str(), "nya?!~", MB_ICONERROR);
+			}
+		}
+	}
+	return SimplifySort_orig(a1, a2);
+}
+
+void __thiscall Size8Hooked(uintptr_t* addr, int size) {
+	MessageBoxA(0, std::format("Vector is size 8 at vtable {:X}", *addr).c_str(), "nya?!~", MB_ICONERROR);
+}
+
 BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 	switch( fdwReason ) {
 		case DLL_PROCESS_ATTACH: {
@@ -144,6 +184,9 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				MessageBoxA(nullptr, "Unsupported game version! Make sure you're using v1.3 (.exe size of 6029312 bytes)", "nya?!~", MB_ICONERROR);
 				return TRUE;
 			}
+
+			NyaHookLib::Patch(0x68501B + 1, &SimplifySortHooked);
+			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF960, &Size8Hooked);
 
 			if (std::filesystem::exists("NFSMWOpenLimitAdjuster_gcp.toml")) {
 				try {
@@ -254,6 +297,32 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			NyaHookLib::Patch<uint8_t>(0x687817 + 2, 0x7F); // cmp eax,7F
 			NyaHookLib::Patch<uint8_t>(0x68781C + 2, 0x81); // lea edx,[eax-7F]
 
+			// SFXObj_MomentStrm::stMomentDecription size 0x14
+			/*for (int i = 0; i < 6; i++) {
+				NyaHookLib::Patch(0x899200 + (i * 4), aVTable[i]);
+			}*/
+
+			for (int i = 0; i < 6; i++) {
+				NyaHookLib::Patch(0x8AA234 + (i * 4), aNewVehicleManagementNodeVectorVTable[i]);
+			}
+
+			// sub_4C01D0 seems to be handling a vector of 8 size
+
+			uintptr_t garbagevtables[] = {
+				0x8AA038, // UTL::Collections::GarbageNode<PhysicsObject,160>::_mCollector
+				0x8AA304, // unknown 2296
+				0x899218, // unknown 24
+				0x899248, // unknown 24
+				0x8B06E8, // unknown 40
+				0x8B0700, // unknown 8
+				0x8B0718, // unknown 2296
+			};
+			for (auto& addr : garbagevtables) {
+				for (int i = 0; i < 6; i++) {
+					NyaHookLib::Patch(addr + (i * 4), aNewGarbageVectorVTable[i]);
+				}
+			}
+
 			uintptr_t vtables[] = {
 				0x89157C, // unknown 20
 				0x8915B8, // unknown 20
@@ -281,14 +350,11 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				0x8A9FF0, // unknown 8
 				0x8AA008, // unknown 20
 				0x8AA020, // unknown 2
-				0x8AA038, // UTL::Collections::GarbageNode<PhysicsObject,160>::_mCollector
 				0x8AA050, // unknown 160
 				0x8AA068, // unknown 8
 				0x8AA080, // unknown 8
-				0x8AA234, // PVehicle::ManagementList 20
 				0x8AA2D4, // unknown 160
 				0x8AA2EC, // unknown 40
-				0x8AA304, // unknown 2296
 				0x8AA31C, // unknown 2296
 				0x8AA334, // unknown 96
 				0x8AA34C, // unknown 8
