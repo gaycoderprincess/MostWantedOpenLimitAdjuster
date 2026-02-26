@@ -203,6 +203,7 @@ void DebugMenu() {
 	DrawMenuOption(std::format("VEHICLE_TRAILERS: {}", VEHICLE_LIST::GetList(VEHICLE_TRAILERS).size()));
 	DrawMenuOption(std::format("RigidBody: {}", RigidBody::mCount));
 	DrawMenuOption(std::format("SimpleRigidBody: {}", SimpleRigidBody::mCount));
+	DrawMenuOption(std::format("SimTask: {}", *(int*)0x988ED0));
 
 	ChloeMenuLib::EndMenu();
 }
@@ -367,6 +368,9 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			// PVehicle::MakeRoom increase to 255
 			NyaHookLib::Patch<uint8_t>(0x687817 + 2, 0xFF); // cmp eax,7F
 			NyaHookLib::Patch<uint8_t>(0x68781C + 2, 0x81); // lea edx,[eax-7F]
+
+			// remove limit from SimTask
+			NyaHookLib::Patch<uint8_t>(0x6ED14A, 0xEB);
 
 			// SFXObj_MomentStrm::stMomentDecription size 0x14
 			/*for (int i = 0; i < 6; i++) {
