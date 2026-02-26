@@ -23,7 +23,7 @@ void __thiscall NewVector_Destruct(UTL::Vector<void*>* pThis, int a2) {
 
 template<size_t count>
 void* __thiscall NewVector_AllocVectorSpace(UTL::Vector<void*>* pThis, size_t num, size_t alignment) {
-	WriteLog(std::format("AllocVectorSpace {:X}", (uintptr_t)__builtin_return_address(0)));
+	//WriteLog(std::format("AllocVectorSpace {:X}", (uintptr_t)__builtin_return_address(0)));
 	return GAME_malloc(num * count);
 }
 
@@ -173,8 +173,11 @@ bool SimplifySortHooked(uintptr_t a1, uintptr_t a2) {
 	return SimplifySort_orig(a1, a2);
 }
 
-void __thiscall Size8Hooked(uintptr_t* addr, int size) {
-	MessageBoxA(0, std::format("Vector is size 8 at vtable {:X}", *addr).c_str(), "nya?!~", MB_ICONERROR);
+template<int elementSize>
+void __thiscall VectorSizeHooked(uintptr_t* addr, int size) {
+	WriteLog(std::format("Vector is size {} at vtable {:X}", elementSize, *addr));
+	auto vec = (UTL::Vector<void*>*)addr;
+	vec->mBegin = vec->AllocVectorSpace(size, 16);
 }
 
 BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
@@ -186,7 +189,16 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			}
 
 			NyaHookLib::Patch(0x68501B + 1, &SimplifySortHooked);
-			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF960, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x41C080, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4C01D0, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EA9B0, &Size14Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAB00, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAD20, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x674060, &Size18Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6749E0, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF850, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF960, &Size8Hooked);
+			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EFA70, &Size8Hooked);
 
 			if (std::filesystem::exists("NFSMWOpenLimitAdjuster_gcp.toml")) {
 				try {
@@ -306,16 +318,18 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				NyaHookLib::Patch(0x8AA234 + (i * 4), aNewVehicleManagementNodeVectorVTable[i]);
 			}
 
-			// sub_4C01D0 seems to be handling a vector of 8 size
-
 			uintptr_t garbagevtables[] = {
+				0x899218,
+				0x899248,
+				0x8A7E98,
 				0x8AA038, // UTL::Collections::GarbageNode<PhysicsObject,160>::_mCollector
-				0x8AA304, // unknown 2296
-				0x899218, // unknown 24
-				0x899248, // unknown 24
-				0x8B06E8, // unknown 40
-				0x8B0700, // unknown 8
-				0x8B0718, // unknown 2296
+				0x8AA2D4,
+				0x8AA2EC,
+				0x8AA304,
+				0x8AA3C4,
+				0x8B06E8,
+				0x8B0700,
+				0x8B0718,
 			};
 			for (auto& addr : garbagevtables) {
 				for (int i = 0; i < 6; i++) {
@@ -353,8 +367,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				0x8AA050, // unknown 160
 				0x8AA068, // unknown 8
 				0x8AA080, // unknown 8
-				0x8AA2D4, // unknown 160
-				0x8AA2EC, // unknown 40
 				0x8AA31C, // unknown 2296
 				0x8AA334, // unknown 96
 				0x8AA34C, // unknown 8
@@ -362,7 +374,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				0x8AA37C, // unknown 160
 				0x8AA394, // ISimpleBody 96
 				0x8AA3AC, // unknown 160
-				0x8AA3C4, // unknown 20
 				0x8AA3DC, // unknown 8
 				0x8AA3F4, // unknown 8
 				0x8AA40C, // unknown 8
