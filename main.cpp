@@ -164,6 +164,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 
 				auto ReplacementTextureTableFixupSize = config["replacement_texture_table"].value_or(182);
 				auto aNewReplacementTextureTableFixups = new uint32_t[ReplacementTextureTableFixupSize*2];
+				memset(aNewReplacementTextureTableFixups, 0, sizeof(uint32_t)*ReplacementTextureTableFixupSize*2);
 				NyaHookLib::Patch(0x4FB607, &aNewReplacementTextureTableFixups[0]);
 				NyaHookLib::Patch(0x4FB655, &aNewReplacementTextureTableFixups[0]);
 				NyaHookLib::Patch(0x4FB698, &aNewReplacementTextureTableFixups[0]);
@@ -173,15 +174,28 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				NyaHookLib::Patch(0x4FB6D4, &aNewReplacementTextureTableFixups[ReplacementTextureTableFixupSize*2]);
 				NyaHookLib::Patch(0x50145E, &aNewReplacementTextureTableFixups[ReplacementTextureTableFixupSize*2]);
 
-				auto rigidBodyCount = config["rigidbody_volatile_table"].value_or(64);
-				nMaxSimpleRigidBodies = config["simplerigidbody_volatile_table"].value_or(96);
+				auto rigidBodyCount = config["rigidbody_count"].value_or(64);
+				nMaxSimpleRigidBodies = config["simplerigidbody_count"].value_or(96);
 
 				auto aVolatilePtrs = new void*[rigidBodyCount];
+				auto aVolatileWorkspace = new uint8_t[rigidBodyCount*0xB0];
+				auto aRigidBodyMaps = new int[rigidBodyCount];
+				auto aSimpleVolatilePtrs = new void*[nMaxSimpleRigidBodies];
+				auto aSimpleVolatileWorkspace = new uint8_t[nMaxSimpleRigidBodies*0x40];
+				auto aSimpleRigidBodyMaps = new int[nMaxSimpleRigidBodies];
+
+				memset(aVolatilePtrs, 0, sizeof(void*)*rigidBodyCount);
+				memset(aVolatileWorkspace, 0, rigidBodyCount*0xB0);
+				memset(aRigidBodyMaps, 0, sizeof(int)*rigidBodyCount);
+				memset(aSimpleVolatilePtrs, 0, sizeof(void*)*nMaxSimpleRigidBodies);
+				memset(aSimpleVolatileWorkspace, 0, nMaxSimpleRigidBodies*0x40);
+				memset(aSimpleRigidBodyMaps, 0, sizeof(int)*nMaxSimpleRigidBodies);
+
 				NyaHookLib::Patch(0x6959D5, &aVolatilePtrs[0]);
 				NyaHookLib::Patch(0x6959EF, &aVolatilePtrs[0]);
 				NyaHookLib::Patch(0x6A6453, &aVolatilePtrs[0]);
 				NyaHookLib::Patch(0x6A647E, &aVolatilePtrs[0]);
-				*(void**)0x9383A8 = new uint8_t[rigidBodyCount*0xB0]; // ScratchPtr<RigidBody::Volatile>::mWorkSpace
+				*(void**)0x9383A8 = aVolatileWorkspace; // ScratchPtr<RigidBody::Volatile>::mWorkSpace
 
 				NyaHookLib::Patch<uint8_t>(0x68BA34 + 2, rigidBodyCount);
 				NyaHookLib::Patch<uint8_t>(0x68BA5E + 2, rigidBodyCount);
@@ -195,7 +209,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 					NyaHookLib::Patch<uint8_t>(0x6A645D, 0xEB);
 				}
 
-				auto aRigidBodyMaps = new int[rigidBodyCount];
 				NyaHookLib::Patch(0x68BA3C, &aRigidBodyMaps[0]);
 				NyaHookLib::Patch(0x68BA55, &aRigidBodyMaps[0]);
 				NyaHookLib::Patch(0x6B5C68, &aRigidBodyMaps[0]);
@@ -214,14 +227,12 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 					NyaHookLib::Patch<uint8_t>(0x6A64CF, 0xEB);
 				}
 
-				auto aSimpleVolatilePtrs = new void*[nMaxSimpleRigidBodies];
 				NyaHookLib::Patch(0x695A15, &aSimpleVolatilePtrs[0]);
 				NyaHookLib::Patch(0x695A2F, &aSimpleVolatilePtrs[0]);
 				NyaHookLib::Patch(0x6A64C3, &aSimpleVolatilePtrs[0]);
 				NyaHookLib::Patch(0x6A64E0, &aSimpleVolatilePtrs[0]);
-				*(void**)0x93839C = new uint8_t[nMaxSimpleRigidBodies*0x40]; // ScratchPtr<SimpleRigidBody::Volatile>::mWorkSpace
+				*(void**)0x93839C = aSimpleVolatileWorkspace; // ScratchPtr<SimpleRigidBody::Volatile>::mWorkSpace
 
-				auto aSimpleRigidBodyMaps = new int[nMaxSimpleRigidBodies];
 				NyaHookLib::Patch(0x68BBEC, &aSimpleRigidBodyMaps[0]);
 				NyaHookLib::Patch(0x68BC05, &aSimpleRigidBodyMaps[0]);
 				NyaHookLib::Patch(0x6B60C3, &aSimpleRigidBodyMaps[0]);
@@ -253,6 +264,27 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				0x8977A4, // CarSoundConn 20
 				0x8977BC, // unknown 20
 				0x8977D4, // unknown 25
+				0x8A9EA0, // unknown 160
+				0x8A9EB8, // unknown 40
+				0x8A9ED0, // unknown 2296
+				0x8A9EE8, // unknown 96
+				0x8A9F00, // unknown 8
+				0x8A9F18, // unknown 28
+				0x8A9F30, // unknown 160
+				0x8A9F48, // unknown 96
+				0x8A9F60, // unknown 160
+				0x8A9F78, // unknown 20
+				0x8A9F90, // unknown 8
+				0x8A9FA8, // unknown 8
+				0x8A9FC0, // unknown 8
+				0x8A9FD8, // unknown 160
+				0x8A9FF0, // unknown 8
+				0x8AA008, // unknown 20
+				0x8AA020, // unknown 2
+				0x8AA038, // UTL::Collections::GarbageNode<PhysicsObject,160>::_mCollector
+				0x8AA050, // unknown 160
+				0x8AA068, // unknown 8
+				0x8AA080, // unknown 8
 				0x8AA234, // PVehicle::ManagementList 20
 				0x8AA2D4, // unknown 160
 				0x8AA2EC, // unknown 40
