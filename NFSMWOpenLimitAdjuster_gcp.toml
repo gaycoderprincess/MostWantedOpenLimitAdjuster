@@ -1,4 +1,5 @@
 car_loader_memory=150000		# Memory allocated for loading car models (default: 50000)
+frame_memory_buffer=6553600		# Memory allocated for rendering objects (default: 409600)
 fastmem=4450304				# Memory allocated for the FastMem allocator (default: 2225152)
 replacement_texture_table=32767		# Amount of replacement textures, i.e. car lights and license plates (default: 182)
 rigidbody_count=255			# Amount of physics objects (default: 64)

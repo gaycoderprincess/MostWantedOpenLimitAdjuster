@@ -211,6 +211,12 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				auto config = toml::parse_file("NFSMWOpenLimitAdjuster_gcp.toml");
 				CarLoaderPoolSizes = config["car_loader_memory"].value_or(CarLoaderPoolSizes);
 
+				auto frameMemoryBufferSize = config["frame_memory_buffer"].value_or(409600);
+				NyaHookLib::Patch(0x5009D1 + 1, frameMemoryBufferSize);
+				NyaHookLib::Patch(0x5009DB + 1, frameMemoryBufferSize);
+				NyaHookLib::Patch(0x500A00 + 1, frameMemoryBufferSize);
+				NyaHookLib::Patch(0x500A0C + 6, frameMemoryBufferSize);
+
 				NyaHookLib::Patch<uint32_t>(0x64A56E, config["fastmem"].value_or(0x21F400));
 
 				for (int i = 0; i < sizeof(aSlotPoolNames)/sizeof(aSlotPoolNames[0]); i++) {
@@ -321,7 +327,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x45CD20, &BreakHooked);
 
 			// PVehicle::MakeRoom increase to 127
-			NyaHookLib::Patch<uint8_t>(0x687817 + 2, 0x7F); // cmp eax,7F
+			NyaHookLib::Patch<uint8_t>(0x687817 + 2, 0xFF); // cmp eax,7F
 			NyaHookLib::Patch<uint8_t>(0x68781C + 2, 0x81); // lea edx,[eax-7F]
 
 			// SFXObj_MomentStrm::stMomentDecription size 0x14
