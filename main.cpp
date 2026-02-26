@@ -6,6 +6,8 @@
 #include "nya_commonhooklib.h"
 #include "nfsmw.h"
 
+#include "chloemenulib.h"
+
 void WriteLog(const std::string& str) {
 	static auto file = std::ofstream("NFSMWOpenLimitAdjuster_gcp.log");
 
@@ -71,7 +73,13 @@ void* aNewVehicleManagementNodeVectorVTable[] = {
 };
 
 void BreakHooked() {
-	MessageBoxA(nullptr, std::format("Breakpoint called from {:X}", (uintptr_t)__builtin_return_address(0)).c_str(), "nya?!~", MB_ICONERROR);
+	auto addr = (uintptr_t)__builtin_return_address(0);
+	if (addr == 0x5D2A1A) {
+		MessageBoxA(nullptr, "Out of Fastmem memory", "nya?!~", MB_ICONERROR);
+	}
+	else {
+		MessageBoxA(nullptr, std::format("Breakpoint called from {:X}", addr).c_str(), "nya?!~", MB_ICONERROR);
+	}
 	__debugbreak();
 }
 
@@ -180,6 +188,25 @@ void __thiscall VectorSizeHooked(uintptr_t* addr, int size) {
 	vec->mBegin = vec->AllocVectorSpace(size, 16);
 }
 
+void DebugMenu() {
+	ChloeMenuLib::BeginMenu();
+
+	DrawMenuOption(std::format("VEHICLE_ALL: {}", VEHICLE_LIST::GetList(VEHICLE_ALL).size()));
+	DrawMenuOption(std::format("VEHICLE_PLAYERS: {}", VEHICLE_LIST::GetList(VEHICLE_PLAYERS).size()));
+	DrawMenuOption(std::format("VEHICLE_AI: {}", VEHICLE_LIST::GetList(VEHICLE_AI).size()));
+	DrawMenuOption(std::format("VEHICLE_AIRACERS: {}", VEHICLE_LIST::GetList(VEHICLE_AIRACERS).size()));
+	DrawMenuOption(std::format("VEHICLE_AICOPS: {}", VEHICLE_LIST::GetList(VEHICLE_AICOPS).size()));
+	DrawMenuOption(std::format("VEHICLE_AITRAFFIC: {}", VEHICLE_LIST::GetList(VEHICLE_AITRAFFIC).size()));
+	DrawMenuOption(std::format("VEHICLE_RACERS: {}", VEHICLE_LIST::GetList(VEHICLE_RACERS).size()));
+	DrawMenuOption(std::format("VEHICLE_REMOTE: {}", VEHICLE_LIST::GetList(VEHICLE_REMOTE).size()));
+	DrawMenuOption(std::format("VEHICLE_INACTIVE: {}", VEHICLE_LIST::GetList(VEHICLE_INACTIVE).size()));
+	DrawMenuOption(std::format("VEHICLE_TRAILERS: {}", VEHICLE_LIST::GetList(VEHICLE_TRAILERS).size()));
+	DrawMenuOption(std::format("RigidBody: {}", RigidBody::mCount));
+	DrawMenuOption(std::format("SimpleRigidBody: {}", SimpleRigidBody::mCount));
+
+	ChloeMenuLib::EndMenu();
+}
+
 BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 	switch( fdwReason ) {
 		case DLL_PROCESS_ATTACH: {
@@ -187,6 +214,8 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				MessageBoxA(nullptr, "Unsupported game version! Make sure you're using v1.3 (.exe size of 6029312 bytes)", "nya?!~", MB_ICONERROR);
 				return TRUE;
 			}
+
+			ChloeMenuLib::RegisterMenu("Open Limit Adjuster Debug", &DebugMenu);
 
 			NyaHookLib::Patch(0x68501B + 1, &SimplifySortHooked);
 			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x41C080, &VectorSizeHooked<8>);
@@ -256,6 +285,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				auto aVolatilePtrs = new void*[rigidBodyCount];
 				auto aVolatileWorkspace = new uint8_t[rigidBodyCount*0xB0];
 				auto aRigidBodyMaps = new int[rigidBodyCount];
+				auto aRBGridMemory = new uint8_t[rigidBodyCount*0x6C];
 				auto aSimpleVolatilePtrs = new void*[nMaxSimpleRigidBodies];
 				auto aSimpleVolatileWorkspace = new uint8_t[nMaxSimpleRigidBodies*0x40];
 				auto aSimpleRigidBodyMaps = new int[nMaxSimpleRigidBodies];
@@ -263,6 +293,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				memset(aVolatilePtrs, 0, sizeof(void*)*rigidBodyCount);
 				memset(aVolatileWorkspace, 0, rigidBodyCount*0xB0);
 				memset(aRigidBodyMaps, 0, sizeof(int)*rigidBodyCount);
+				memset(aRBGridMemory, 0, rigidBodyCount*0x6C);
 				memset(aSimpleVolatilePtrs, 0, sizeof(void*)*nMaxSimpleRigidBodies);
 				memset(aSimpleVolatileWorkspace, 0, nMaxSimpleRigidBodies*0x40);
 				memset(aSimpleRigidBodyMaps, 0, sizeof(int)*nMaxSimpleRigidBodies);
@@ -277,12 +308,16 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				NyaHookLib::Patch<uint8_t>(0x68BA5E + 2, rigidBodyCount);
 				NyaHookLib::Patch<uint8_t>(0x6B5C6F + 2, rigidBodyCount);
 				NyaHookLib::Patch<uint8_t>(0x6A645A + 2, rigidBodyCount);
+				NyaHookLib::Patch<uint8_t>(0x6B5994 + 2, rigidBodyCount);
+				NyaHookLib::Patch<uint8_t>(0x6B5DF9 + 2, rigidBodyCount);
 				// just remove the bound checks above 255, i cba right now
 				if (rigidBodyCount > 0xFF) {
 					NyaHookLib::Patch<uint16_t>(0x68BA37, 0x9090);
 					NyaHookLib::Patch<uint8_t>(0x68BA61, 0xEB);
 					NyaHookLib::Patch<uint8_t>(0x6B5C72, 0xEB);
 					NyaHookLib::Patch<uint8_t>(0x6A645D, 0xEB);
+					NyaHookLib::Patch<uint16_t>(0x6B5997, 0x9090);
+					NyaHookLib::Patch<uint16_t>(0x6B5DFC, 0x9090);
 				}
 
 				NyaHookLib::Patch(0x68BA3C, &aRigidBodyMaps[0]);
@@ -290,6 +325,9 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				NyaHookLib::Patch(0x6B5C68, &aRigidBodyMaps[0]);
 				NyaHookLib::Patch(0x6B5F95, &aRigidBodyMaps[0]);
 				NyaHookLib::Patch(0x6B77C4, &aRigidBodyMaps[0]);
+
+				NyaHookLib::Patch(0x6B599D, &aRBGridMemory[0]);
+				NyaHookLib::Patch(0x6B5E02, &aRBGridMemory[0]);
 
 				NyaHookLib::Patch<uint8_t>(0x68BBE4 + 2, nMaxSimpleRigidBodies);
 				NyaHookLib::Patch<uint8_t>(0x6B60CA + 2, nMaxSimpleRigidBodies);
@@ -326,7 +364,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 
 			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x45CD20, &BreakHooked);
 
-			// PVehicle::MakeRoom increase to 127
+			// PVehicle::MakeRoom increase to 255
 			NyaHookLib::Patch<uint8_t>(0x687817 + 2, 0xFF); // cmp eax,7F
 			NyaHookLib::Patch<uint8_t>(0x68781C + 2, 0x81); // lea edx,[eax-7F]
 
