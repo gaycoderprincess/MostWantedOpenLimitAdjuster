@@ -9,6 +9,10 @@ Experiment for Need for Speed: Most Wanted that removes or increases certain mem
 - Plop the files into your game folder, edit `NFSMWOpenLimitAdjuster_gcp.toml` to change the options to your liking.
 - Enjoy, nya~ :3
 
+Note that this mod does not do anything without other mods that make use of the increased limits!  
+Use (Extra Options)[https://github.com/ExOptsTeam/NFSMWExOpts/releases/latest] to increase the amount of opponents in quick races.  
+Use (Bartender)[https://github.com/rng-guy/NFSMWBartender/releases/latest] and/or edit the pursuit levels VLT to increase the maximum amount of cops.  
+
 ## Features
 
 - 16 opponents in one race (requires up to `DUMMY_SKIN16` to be present in `CARS/TEXTURES.BIN`, all of them being the same resolution as `DUMMY_SKIN1`)
