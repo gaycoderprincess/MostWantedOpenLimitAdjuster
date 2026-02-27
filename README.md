@@ -12,9 +12,9 @@ Experiment for Need for Speed: Most Wanted that removes or increases certain mem
 ## Features
 
 - 16 opponents in one race (requires up to `DUMMY_SKIN16` to be present in `CARS/TEXTURES.BIN`, all of them being the same resolution as `DUMMY_SKIN1`)
-- Increased the memory for the frame buffer, fixing issues with flickering and disappearing cop cars
+- Increased memory for the frame buffer, fixing issues with flickering and disappearing cop cars
 - The RigidBody type has been changed to use 16-bit indices, allowing up to 32767 physics objects on the map at once
-- Virtually unlimited amounts of traffic and police cars, with memory allocated on the fly
+- Virtually unlimited amounts of traffic and police cars, with memory allocated on the fly (confirmed working with over 500 vehicles on the map at once)
 
 ## Building
 
