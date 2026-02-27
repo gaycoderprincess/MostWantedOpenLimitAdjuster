@@ -92,9 +92,9 @@ const char* aSlotPoolNames[] = {
 		"Anim_CNFSAnimBank_SlotPool",
 		"AStarNodeSlotPool",
 		"AStarSearchSlotPool",
-		"AUD_CsisSlotPools",
-		"bFileSystem",
-		"CACHE_SpeechEventslotpool",
+		"AUD: Csis SlotPools",
+		"bFile System",
+		"CACHE: Speech Event slotpool",
 		"CarEmitterPositionSlotPool",
 		"CarEmitterPositionSlotPool",
 		"CarLoadedRideInfoSlotPool",
@@ -104,7 +104,7 @@ const char* aSlotPoolNames[] = {
 		"CarPartModelPool",
 		"ClanSlotPool",
 		"eAnimTextureSlotPool",
-		"Ecstacy_ModelSlotPool",
+		"Ecstacy:ModelSlotPool",
 		"eLightMaterialPlatInfoSlotPool",
 		"eMeshRender",
 		"EmitterGroupSlotPool",
@@ -121,15 +121,15 @@ const char* aSlotPoolNames[] = {
 		"ParticleSlotPool",
 		"QueuedFileSlotPool",
 		"ResourceFileSlotPool",
-		"SampleWrapperSlotPool",
+		"SampleWrapper SlotPool",
 		"ShadowMapMeshSlotPool",
 		"SkidSetSlotPool",
 		"SpaceNodeSlotPool",
-		"StitchSlotPool",
+		"Stitch SlotPool",
 		"TexturePackSlotPool",
 		"VehicleDamagePartSlotPool",
 		"VehiclePartDamageZoneSlotPool",
-		"VoiceActorsslotpool",
+		"VoiceActors slotpool",
 		"WorldAnimCtrl_SlotPool",
 		"WorldAnimEntityTreeInfo_SlotPool",
 		"WorldAnimEntityTree_SlotPool",
@@ -328,8 +328,13 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				NyaHookLib::Patch<uint32_t>(0x64A56E, config["fastmem"].value_or(0x21F400));
 
 				for (int i = 0; i < sizeof(aSlotPoolNames)/sizeof(aSlotPoolNames[0]); i++) {
-					aSlotPoolSizes[i] = config["slot_pools"][aSlotPoolNames[i]].value_or(0);
-					if (aSlotPoolSizes[i] && !strcmp(aSlotPoolNames[i], "eMeshRender")) {
+					std::string str = aSlotPoolNames[i];
+					for (auto& c : str) {
+						if (c == ':' || c == ' ') c = '_';
+					}
+
+					aSlotPoolSizes[i] = config["slot_pools"][str].value_or(0);
+					if (aSlotPoolSizes[i] && str == "eMeshRender") {
 						// extra eMeshRender array
 						auto data = new uint8_t[aSlotPoolSizes[i] * 0x44];
 						NyaHookLib::Patch(0x6DFB8F, &data[0]);
