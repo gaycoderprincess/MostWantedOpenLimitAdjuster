@@ -54,24 +54,6 @@ void* aNewVectorVTable[] = {
 	(void*)&NewVector_OnGrowRequest,
 };
 
-void* aNewGarbageVectorVTable[] = {
-	(void*)&NewVector_Destruct,
-	(void*)&NewVector_AllocVectorSpace<8>,
-	(void*)&NewVector_FreeVectorSpace,
-	(void*)&NewVector_GetGrowSize,
-	(void*)&NewVector_GetMaxCapacity,
-	(void*)&NewVector_OnGrowRequest,
-};
-
-void* aNewVehicleManagementNodeVectorVTable[] = {
-	(void*)&NewVector_Destruct,
-	(void*)&NewVector_AllocVectorSpace<0x18>,
-	(void*)&NewVector_FreeVectorSpace,
-	(void*)&NewVector_GetGrowSize,
-	(void*)&NewVector_GetMaxCapacity,
-	(void*)&NewVector_OnGrowRequest,
-};
-
 void BreakHooked() {
 	auto addr = (uintptr_t)__builtin_return_address(0);
 	if (addr == 0x759FB6) {
@@ -469,13 +451,17 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			// remove limit from SimTask
 			NyaHookLib::Patch<uint8_t>(0x6ED14A, 0xEB);
 
-			// SFXObj_MomentStrm::stMomentDecription size 0x14
+			// SFXObj_MomentStrm::stMomentDecription 64 size 0x14
 			/*for (int i = 0; i < 6; i++) {
-				NyaHookLib::Patch(0x899200 + (i * 4), aVTable[i]);
+				auto func = aNewVectorVTable[i];
+				if (i == 1) func = (void*)&NewVector_AllocVectorSpace<0x14>;
+				NyaHookLib::Patch(0x899200 + (i * 4), func);
 			}*/
 
 			for (int i = 0; i < 6; i++) {
-				NyaHookLib::Patch(0x8AA234 + (i * 4), aNewVehicleManagementNodeVectorVTable[i]);
+				auto func = aNewVectorVTable[i];
+				if (i == 1) func = (void*)&NewVector_AllocVectorSpace<0x18>;
+				NyaHookLib::Patch(0x8AA234 + (i * 4), func);
 			}
 
 			uintptr_t garbagevtables[] = {
@@ -493,7 +479,9 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			};
 			for (auto& addr : garbagevtables) {
 				for (int i = 0; i < 6; i++) {
-					NyaHookLib::Patch(addr + (i * 4), aNewGarbageVectorVTable[i]);
+					auto func = aNewVectorVTable[i];
+					if (i == 1) func = (void*)&NewVector_AllocVectorSpace<8>;
+					NyaHookLib::Patch(addr + (i * 4), func);
 				}
 			}
 
