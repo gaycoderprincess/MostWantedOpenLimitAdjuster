@@ -223,6 +223,48 @@ void __attribute__((naked)) __fastcall PVehicleMakeRoomASM() {
 	);
 }
 
+bool* aSkinSlots = nullptr;
+int GetNextVehicleSkinSlot() {
+	for (int i = 0; i < nMaxVehicles; i++) {
+		if (!aSkinSlots[i]) {
+			aSkinSlots[i] = true;
+			return i+1;
+		}
+	}
+	return 0;
+}
+
+uintptr_t VehicleSkinSlotASM_jmp = 0x75D2E3;
+void __attribute__((naked)) __fastcall VehicleSkinSlotASM() {
+	__asm__ (
+		"pushad\n\t"
+		"call %1\n\t"
+		"mov [esi+0x68], eax\n\t"
+		"popad\n\t"
+		"jmp %0\n\t"
+			:
+			: "m" (VehicleSkinSlotASM_jmp), "i" (GetNextVehicleSkinSlot)
+	);
+}
+
+void __fastcall FreeVehicleSkinSlot(int id) {
+	aSkinSlots[id-1] = false;
+}
+
+uintptr_t VehicleSkinSlotDeleteASM_jmp = 0x75C524;
+void __attribute__((naked)) __fastcall VehicleSkinSlotDeleteASM() {
+	__asm__ (
+		"pushad\n\t"
+		"mov ecx, eax\n\t"
+		"call %1\n\t"
+		"popad\n\t"
+		"mov [esi+0x68], ebx\n\t"
+		"jmp %0\n\t"
+			:
+			: "m" (VehicleSkinSlotDeleteASM_jmp), "i" (FreeVehicleSkinSlot)
+	);
+}
+
 void DebugMenu() {
 	ChloeMenuLib::BeginMenu();
 
@@ -319,6 +361,12 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				auto rigidBodyCount = config["rigidbody_count"].value_or(64);
 				nMaxSimpleRigidBodies = config["simplerigidbody_count"].value_or(96);
 				nMaxVehicles = config["vehicle_count"].value_or(20);
+
+				aSkinSlots = new bool[nMaxVehicles];
+				memset(aSkinSlots,0,sizeof(bool)*nMaxVehicles);
+
+				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75D291, &VehicleSkinSlotASM);
+				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75C50B, &VehicleSkinSlotDeleteASM);
 
 				auto aVolatilePtrs = new void*[rigidBodyCount];
 				auto aVolatileWorkspace = new uint8_t[rigidBodyCount*0xB0];
