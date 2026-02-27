@@ -74,7 +74,10 @@ void* aNewVehicleManagementNodeVectorVTable[] = {
 
 void BreakHooked() {
 	auto addr = (uintptr_t)__builtin_return_address(0);
-	if (addr == 0x5D2A1A) {
+	if (addr == 0x759FB6) {
+		MessageBoxA(nullptr, "Out of CarLoader memory or CarLoadedRideInfoSlotPool is full", "nya?!~", MB_ICONERROR);
+	}
+	else if (addr == 0x5D2A1A) {
 		MessageBoxA(nullptr, "Out of Fastmem memory", "nya?!~", MB_ICONERROR);
 	}
 	else {
@@ -188,6 +191,38 @@ void __thiscall VectorSizeHooked(uintptr_t* addr, int size) {
 	vec->mBegin = vec->AllocVectorSpace(size, 16);
 }
 
+uintptr_t RigidBodyIndexASM_jmp = 0x6B5C82;
+void __attribute__((naked)) __fastcall RigidBodyIndexASM() {
+	__asm__ (
+		"mov [edx+0x5E], ax\n\t"
+		"mov eax, [ebx]\n\t"
+		"mov ecx, [eax]\n\t"
+		"jmp %0\n\t"
+			:
+			: "m" (RigidBodyIndexASM_jmp)
+	);
+}
+
+int nMaxVehicles = 20;
+uintptr_t PVehicleMakeRoomASM_jmp = 0x687823;
+void __attribute__((naked)) __fastcall PVehicleMakeRoomASM() {
+	__asm__ (
+		"push ebx\n\t"
+		"mov ebx, dword ptr %1\n\t"
+		"cmp eax, ebx\n\t"
+		"jbe loc_687823\n\t"
+		"mov edx, eax\n\t"
+		"sub edx, ebx\n\t"
+		"mov [esp+0x24], edx\n\t"
+
+	"loc_687823:\n\t"
+		"pop ebx\n\t"
+		"jmp %0\n\t"
+			:
+			: "m" (PVehicleMakeRoomASM_jmp), "m" (nMaxVehicles)
+	);
+}
+
 void DebugMenu() {
 	ChloeMenuLib::BeginMenu();
 
@@ -204,6 +239,7 @@ void DebugMenu() {
 	DrawMenuOption(std::format("RigidBody: {}", RigidBody::mCount));
 	DrawMenuOption(std::format("SimpleRigidBody: {}", SimpleRigidBody::mCount));
 	DrawMenuOption(std::format("SimTask: {}", *(int*)0x988ED0));
+	DrawMenuOption(std::format("Free Memory: {}K", bCountFreeMemory(0) >> 10));
 
 	ChloeMenuLib::EndMenu();
 }
@@ -282,6 +318,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 
 				auto rigidBodyCount = config["rigidbody_count"].value_or(64);
 				nMaxSimpleRigidBodies = config["simplerigidbody_count"].value_or(96);
+				nMaxVehicles = config["vehicle_count"].value_or(20);
 
 				auto aVolatilePtrs = new void*[rigidBodyCount];
 				auto aVolatileWorkspace = new uint8_t[rigidBodyCount*0xB0];
@@ -319,6 +356,15 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 					NyaHookLib::Patch<uint8_t>(0x6A645D, 0xEB);
 					NyaHookLib::Patch<uint16_t>(0x6B5997, 0x9090);
 					NyaHookLib::Patch<uint16_t>(0x6B5DFC, 0x9090);
+
+					// increase the size of "index" to a short
+					// this can be done freely as the value after it is "unused2" which is obviously unused and is just for 4 byte padding
+					NyaHookLib::Patch<uint8_t>(0x671145 + 1, 0xB7); // RigidBody::GetIndex
+					NyaHookLib::Patch<uint8_t>(0x6B5DEE + 1, 0xB7);
+					NyaHookLib::Patch<uint8_t>(0x6B7930 + 1, 0xB7);
+					NyaHookLib::Patch<uint8_t>(0x6B5F88 + 1, 0xB7);
+					NyaHookLib::Patch<uint8_t>(0x6B77B6 + 1, 0xB7);
+					NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6B5C7B, &RigidBodyIndexASM);
 				}
 
 				NyaHookLib::Patch(0x68BA3C, &aRigidBodyMaps[0]);
@@ -365,9 +411,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 
 			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x45CD20, &BreakHooked);
 
-			// PVehicle::MakeRoom increase to 255
-			NyaHookLib::Patch<uint8_t>(0x687817 + 2, 0xFF); // cmp eax,7F
-			NyaHookLib::Patch<uint8_t>(0x68781C + 2, 0x81); // lea edx,[eax-7F]
+			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x687817, &PVehicleMakeRoomASM);
 
 			// remove limit from SimTask
 			NyaHookLib::Patch<uint8_t>(0x6ED14A, 0xEB);
@@ -448,6 +492,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				0x8AA49C, // IPlayer 8
 				0x8AA4B4, // unknown 8
 				0x8B51A8, // VehicleRenderConn 20
+				0x8B5D6C, // WCollider 100
 			};
 			for (auto& addr : vtables) {
 				for (int i = 0; i < 6; i++) {

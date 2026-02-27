@@ -1,9 +1,10 @@
-car_loader_memory=150000		# Memory allocated for loading car models (default: 50000)
+car_loader_memory=50000			# Memory allocated for loading car models (default: 50000)
 frame_memory_buffer=6553600		# Memory allocated for rendering objects (default: 409600)
-fastmem=8900608				# Memory allocated for the FastMem allocator (default: 2225152)
+fastmem=12900608			# Memory allocated for the FastMem allocator (default: 2225152)
 replacement_texture_table=32767		# Amount of replacement textures, i.e. car lights and license plates (default: 182)
-rigidbody_count=255			# Amount of physics objects (default: 64)
-simplerigidbody_count=255		# Amount of simple physics objects, i.e. smackables (default: 96)
+vehicle_count=512			# Amount of vehicles (default: 20)
+rigidbody_count=2048			# Amount of physics objects (default: 64)
+simplerigidbody_count=2048		# Amount of simple physics objects, i.e. smackables (default: 96)
 
 [slot_pools]
 #AnimCtrlSlotPool=64			# default: 64
