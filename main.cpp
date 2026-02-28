@@ -150,29 +150,6 @@ bool CanSpawnSimpleRigidBodyNew() {
 	return count < nMaxSimpleRigidBodies;
 }
 
-auto SimplifySort_orig = (bool(*)(uintptr_t, uintptr_t))0x6709E0;
-bool SimplifySortHooked(uintptr_t a1, uintptr_t a2) {
-	if (a1 == 0x1 || a2 == 0x1) {
-		MessageBoxA(0, std::format("Smackable check invalid at {:X} {:X}", a1, a2).c_str(), "nya?!~", MB_ICONERROR);
-
-		auto table = &SMACKABLE_LIST::_mTable;
-		for (int i = 0; i < table->size(); i++) {
-			auto smackable = (uintptr_t)table->get(i);
-			if (smackable == 0x1) {
-				MessageBoxA(0, std::format("Smackable at id {} is invalid", i).c_str(), "nya?!~", MB_ICONERROR);
-			}
-		}
-	}
-	return SimplifySort_orig(a1, a2);
-}
-
-template<int elementSize>
-void __thiscall VectorSizeHooked(uintptr_t* addr, int size) {
-	WriteLog(std::format("Vector is size {} at vtable {:X}", elementSize, *addr));
-	auto vec = (UTL::Vector<void*>*)addr;
-	vec->mBegin = vec->AllocVectorSpace(size, 16);
-}
-
 uintptr_t RigidBodyIndexASM_jmp = 0x6B5C82;
 void __attribute__((naked)) __fastcall RigidBodyIndexASM() {
 	__asm__ (
@@ -277,18 +254,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			}
 
 			ChloeMenuLib::RegisterMenu("Open Limit Adjuster Debug", &DebugMenu);
-
-			NyaHookLib::Patch(0x68501B + 1, &SimplifySortHooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x41C080, &VectorSizeHooked<8>);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4C01D0, &Size8Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EA9B0, &Size14Hooked);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAB00, &VectorSizeHooked<8>);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x4EAD20, &VectorSizeHooked<8>);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x674060, &VectorSizeHooked<0x18>);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6749E0, &VectorSizeHooked<8>);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF850, &VectorSizeHooked<8>);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EF960, &VectorSizeHooked<8>);
-			//NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6EFA70, &VectorSizeHooked<8>);
 
 			if (std::filesystem::exists("NFSMWOpenLimitAdjuster_gcp.toml")) {
 				try {
