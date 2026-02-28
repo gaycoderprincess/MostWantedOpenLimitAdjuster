@@ -414,6 +414,10 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 					NyaHookLib::Patch(0x41EC0D, &VEHICLE_LIST::GetList(VEHICLE_AITRAFFIC).mSize);
 					NyaHookLib::Patch(0x42632C, &VEHICLE_LIST::GetList(VEHICLE_AITRAFFIC).mSize);
 				}
+
+				// disable 8 cop limit
+				NyaHookLib::Patch<uint16_t>(0x426C54, 0x9090);
+				NyaHookLib::Patch<uint16_t>(0x43EB90, 0x9090);
 			}
 
 			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x45CD20, &BreakHooked);
