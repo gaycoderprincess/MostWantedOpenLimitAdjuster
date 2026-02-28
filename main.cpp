@@ -429,6 +429,9 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			// remove limit from SimTask
 			NyaHookLib::Patch<uint8_t>(0x6ED14A, 0xEB);
 
+			// remove limit from RBSmackable
+			NyaHookLib::Patch<uint8_t>(0x6896B6, 0xEB);
+
 			// SFXObj_MomentStrm::stMomentDecription 64 size 0x14
 			/*for (int i = 0; i < 6; i++) {
 				auto func = aNewVectorVTable[i];
