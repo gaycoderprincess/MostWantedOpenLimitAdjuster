@@ -183,8 +183,9 @@ void __attribute__((naked)) __fastcall PVehicleMakeRoomASM() {
 }
 
 bool* aSkinSlots = nullptr;
+int nNumSkinSlots = 4;
 int GetNextVehicleSkinSlot() {
-	for (int i = 0; i < nMaxVehicles; i++) {
+	for (int i = 0; i < nNumSkinSlots; i++) {
 		if (!aSkinSlots[i]) {
 			aSkinSlots[i] = true;
 			return i+1;
@@ -314,11 +315,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				nMaxSimpleRigidBodies = config["simplerigidbody_count"].value_or(96);
 				nMaxVehicles = config["vehicle_count"].value_or(20);
 
-				aSkinSlots = new bool[nMaxVehicles];
-				memset(aSkinSlots,0,sizeof(bool)*nMaxVehicles);
-
-				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75D291, &VehicleSkinSlotASM);
-				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75C50B, &VehicleSkinSlotDeleteASM);
 				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x687817, &PVehicleMakeRoomASM);
 
 				auto aVolatilePtrs = new void*[rigidBodyCount];
@@ -408,6 +404,16 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				NyaHookLib::Patch<uint8_t>(0x6ED276, 0x90); // nop
 
 				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6ED390, &CanSpawnSimpleRigidBodyNew);
+
+				if (config["racer_skin_fix"].value_or(false)) {
+					nNumSkinSlots = config["racer_skin_count"].value_or(nMaxVehicles);
+
+					aSkinSlots = new bool[nNumSkinSlots];
+					memset(aSkinSlots,0,sizeof(bool)*nNumSkinSlots);
+
+					NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75D291, &VehicleSkinSlotASM);
+					NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75C50B, &VehicleSkinSlotDeleteASM);
+				}
 
 				if (config["independent_traffic"].value_or(true)) {
 					// make the traffic spawner independent of other car counts
