@@ -5,9 +5,8 @@ replacement_texture_table=32767		# Amount of replacement textures, i.e. car ligh
 vehicle_count=512			# Amount of vehicles (default: 20)
 rigidbody_count=2048			# Amount of physics objects (default: 64)
 simplerigidbody_count=2048		# Amount of simple physics objects, i.e. smackables (default: 96)
-independent_traffic=true		# separates traffic density from overall car count, making it consistent with freeroam even in cop chases
-racer_skin_fix=false		# Allows racers to use up to (racer_skin_count) number of skin textures, requires CARS/TEXTURES.BIN to be filled with the appropriate amount of DUMMY_SKIN and DUMMY_WHEEL textures!
-racer_skin_count=16			# Amount of skin textures to load if racer_skin_fix is on
+racer_skin_count=4			# Amount of skin textures to load for racer cars, requires CARS/TEXTURES.BIN to be filled with the appropriate amount of DUMMY_SKIN and DUMMY_WHEEL textures!
+independent_traffic=true		# Separates traffic density from overall car count, making it consistent with freeroam even in cop chases
 
 [slot_pools]
 #AnimCtrlSlotPool=64			# default: 64

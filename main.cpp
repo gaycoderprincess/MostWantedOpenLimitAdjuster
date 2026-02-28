@@ -405,15 +405,13 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 
 				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6ED390, &CanSpawnSimpleRigidBodyNew);
 
-				if (config["racer_skin_fix"].value_or(false)) {
-					nNumSkinSlots = config["racer_skin_count"].value_or(nMaxVehicles);
+				nNumSkinSlots = config["racer_skin_count"].value_or(nMaxVehicles);
 
-					aSkinSlots = new bool[nNumSkinSlots];
-					memset(aSkinSlots,0,sizeof(bool)*nNumSkinSlots);
+				aSkinSlots = new bool[nNumSkinSlots];
+				memset(aSkinSlots,0,sizeof(bool)*nNumSkinSlots);
 
-					NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75D291, &VehicleSkinSlotASM);
-					NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75C50B, &VehicleSkinSlotDeleteASM);
-				}
+				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75D291, &VehicleSkinSlotASM);
+				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75C50B, &VehicleSkinSlotDeleteASM);
 
 				if (config["independent_traffic"].value_or(true)) {
 					// make the traffic spawner independent of other car counts
