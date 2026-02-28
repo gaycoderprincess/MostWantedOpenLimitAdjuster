@@ -319,6 +319,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 
 				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75D291, &VehicleSkinSlotASM);
 				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x75C50B, &VehicleSkinSlotDeleteASM);
+				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x687817, &PVehicleMakeRoomASM);
 
 				auto aVolatilePtrs = new void*[rigidBodyCount];
 				auto aVolatileWorkspace = new uint8_t[rigidBodyCount*0xB0];
@@ -407,11 +408,15 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				NyaHookLib::Patch<uint8_t>(0x6ED276, 0x90); // nop
 
 				NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x6ED390, &CanSpawnSimpleRigidBodyNew);
+
+				if (config["independent_traffic"].value_or(true)) {
+					// make the traffic spawner independent of other car counts
+					NyaHookLib::Patch(0x41EC0D, &VEHICLE_LIST::GetList(VEHICLE_AITRAFFIC).mSize);
+					NyaHookLib::Patch(0x42632C, &VEHICLE_LIST::GetList(VEHICLE_AITRAFFIC).mSize);
+				}
 			}
 
 			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x45CD20, &BreakHooked);
-
-			NyaHookLib::PatchRelative(NyaHookLib::JMP, 0x687817, &PVehicleMakeRoomASM);
 
 			// remove limit from SimTask
 			NyaHookLib::Patch<uint8_t>(0x6ED14A, 0xEB);

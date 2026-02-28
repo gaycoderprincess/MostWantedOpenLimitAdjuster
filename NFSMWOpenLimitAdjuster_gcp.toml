@@ -5,6 +5,7 @@ replacement_texture_table=32767		# Amount of replacement textures, i.e. car ligh
 vehicle_count=512			# Amount of vehicles (default: 20)
 rigidbody_count=2048			# Amount of physics objects (default: 64)
 simplerigidbody_count=2048		# Amount of simple physics objects, i.e. smackables (default: 96)
+independent_traffic=true        # separates traffic density from overall car count, making it consistent with freeroam even in cop chases
 
 [slot_pools]
 #AnimCtrlSlotPool=64			# default: 64
