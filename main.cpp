@@ -8,14 +8,6 @@
 
 #include "chloemenulib.h"
 
-void WriteLog(const std::string& str) {
-	static auto file = std::ofstream("NFSMWOpenLimitAdjuster_gcp.log");
-
-	file << str;
-	file << "\n";
-	file.flush();
-}
-
 void __thiscall NewVector_Destruct(UTL::Vector<void*>* pThis, int a2) {
 	if ((a2 & 1) == 0) return;
 
@@ -25,7 +17,6 @@ void __thiscall NewVector_Destruct(UTL::Vector<void*>* pThis, int a2) {
 
 template<size_t count>
 void* __thiscall NewVector_AllocVectorSpace(UTL::Vector<void*>* pThis, size_t num, size_t alignment) {
-	//WriteLog(std::format("AllocVectorSpace {:X}", (uintptr_t)__builtin_return_address(0)));
 	return GAME_malloc(num * count);
 }
 
@@ -596,8 +587,6 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			for (auto& addr : slotpools) {
 				NyaHookLib::PatchRelative(NyaHookLib::CALL, addr, &bNewSlotPoolHooked);
 			}
-
-			WriteLog("Mod initialized");
 		} break;
 		default:
 			break;
