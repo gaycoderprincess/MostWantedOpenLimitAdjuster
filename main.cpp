@@ -423,6 +423,17 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 			// remove limit from RBSmackable
 			NyaHookLib::Patch<uint8_t>(0x6896B6, 0xEB);
 
+			// remove limits from PlaceableScenery
+			NyaHookLib::Patch<uint16_t>(0x681435, 0x9090); // IModel
+			NyaHookLib::Patch<uint16_t>(0x68143E, 0x9090); // IPlaceableScenery
+
+			// remove limit from HeirarchyModel
+			NyaHookLib::Fill(0x67757F, 0x90, 6); // IModel
+
+			// remove limit from DrawVehicle
+			NyaHookLib::Fill(0x6B0522, 0x90, 6); // Vehicle_Part_Count
+			NyaHookLib::Fill(0x6B0532, 0x90, 6); // IModel
+
 			// SFXObj_MomentStrm::stMomentDecription 64 size 0x14
 			/*for (int i = 0; i < 6; i++) {
 				auto func = aNewVectorVTable[i];
@@ -487,7 +498,7 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 				0x8AA050, // unknown 160
 				0x8AA068, // unknown 8
 				0x8AA080, // unknown 8
-				0x8AA31C, // unknown 2296
+				0x8AA31C, // IModel 2296 (for smackables)
 				0x8AA334, // unknown 96
 				0x8AA34C, // unknown 8
 				0x8AA364, // IVehicleCache 28
