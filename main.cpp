@@ -233,6 +233,7 @@ void DebugMenu() {
 	DrawMenuOption(std::format("SimpleRigidBody: {}", SimpleRigidBody::mCount));
 	DrawMenuOption(std::format("SimTask: {}", *(int*)0x988ED0));
 	DrawMenuOption(std::format("Free Memory: {}K", bCountFreeMemory(0) >> 10));
+	DrawMenuOption(std::format("Free Audio Memory: {}K", bLargestMalloc(*(int*)0x8EE558)));
 
 	ChloeMenuLib::EndMenu();
 }
@@ -252,7 +253,12 @@ BOOL WINAPI DllMain(HINSTANCE, DWORD fdwReason, LPVOID) {
 					toml::parse_file("NFSMWOpenLimitAdjuster_gcp.toml");
 				}
 				catch (const toml::parse_error& err) {
-					MessageBoxA(0, std::format("Failed to parse config: {}", err.what()).c_str(), "nya?!~", MB_ICONERROR);
+					MessageBoxA(nullptr, std::format("Failed to parse config: {}", err.what()).c_str(), "nya?!~", MB_ICONERROR);
+				}
+
+				if (*(uint8_t*)0x73B324 == 0x90) {
+					MessageBoxA(nullptr, "Incompatibility detected! Please disable CarSkinFix in Extra Options before continuing.", "nya?!~", MB_ICONERROR);
+					exit(0);
 				}
 
 				auto config = toml::parse_file("NFSMWOpenLimitAdjuster_gcp.toml");
