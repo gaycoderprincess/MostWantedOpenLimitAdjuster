@@ -2,6 +2,8 @@
 
 Experiment for Need for Speed: Most Wanted that removes or increases certain memory limits
 
+### This project has been moved to [Codeberg](https://codeberg.org/gaycoderprincess/MostWantedOpenLimitAdjuster) due to GitHub's continued pushing of AI garbage.
+
 ## Disclaimer
 
 Due to the current programming landscape, I feel that it's necessary to explicitly state that this project had zero assistance or any other kind of involvement from any sort of "AI agent" and it never will.  
