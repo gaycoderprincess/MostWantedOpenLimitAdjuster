@@ -7,6 +7,7 @@ rigidbody_count=2048			# Amount of physics objects (default: 64)
 simplerigidbody_count=2048		# Amount of simple physics objects, i.e. smackables (default: 96)
 racer_skin_count=4			# Amount of skin textures to load for racer cars, requires CARS/TEXTURES.BIN to be filled with the appropriate amount of DUMMY_SKIN and DUMMY_WHEEL textures!
 independent_traffic=true		# Separates traffic density from overall car count, making it consistent with freeroam even in cop chases
+remove_cop_limit=true			# Removes 8 cop limit in chases
 
 [slot_pools]
 #AnimCtrlSlotPool=64			# default: 64
